@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ali -Ali</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    
+    <style>
+        :root {
+            --bg-color: #0a0a0a;
+            --card-bg: rgba(20, 20, 20, 0.6);
+            --primary-color: #ff1a1a;
+            --secondary-color: #cc0000;
+            --text-color: #ffffff;
+            --text-secondary: #b3b3b3;
+            --input-bg: rgba(30, 30, 30, 0.7);
+            --border-color: rgba(255, 26, 26, 0.3);
+            --success-color: #00cc66;
+            --accent-blue: #ff3333;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 26, 26, 0.2);
+        }
+
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body { 
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a0000 50%, #0a0a0a 100%);
+            background-attachment: fixed;
+            color: var(--text-color); 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            padding: 20px; 
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(255, 26, 26, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 51, 51, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(204, 0, 0, 0.08) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+            animation: bgPulse 8s ease-in-out infinite;
+        }
+
+        @keyframes bgPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .admin-gear-container { 
+            position: absolute; 
+            top: 20px; 
+            left: 20px; 
+            background: var(--glass-bg); 
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border); 
+            padding: 12px 20px; 
+            border-radius: 30px; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            z-index: 1000; 
+            color: var(--primary-color);
+            font-weight: 600;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(255, 26, 26, 0.2);
+        }
+
+        .admin-gear-container:hover { 
+            background: rgba(255, 26, 26, 0.2); 
+            color: #fff;
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 8px 25px rgba(255, 26, 26, 0.4);
+            border-color: var(--primary-color);
+        }
+
+        .admin-gear-container span {
+            font-size: 20px;
+            animation: gearSpin 4s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes gearSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .container { 
+            width: 100%; 
+            max-width: 800px; 
+            background: var(--card-bg); 
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 35px; 
+            border-radius: 24px; 
+            border: 1px solid var(--glass-border); 
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.6),
+                0 0 60px rgba(255, 26, 26, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1); 
+            margin-top: 50px;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .container:hover {
+            box-shadow: 
+                0 12px 40px rgba(0, 0, 0, 0.7),
+                0 0 80px rgba(255, 26, 26, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.15);
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary-color), #ff6666, var(--primary-color), transparent);
+            animation: borderGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes borderGlow {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        h2, h3 { 
+            text-align: center; 
+            margin-bottom: 25px; 
+            color: var(--primary-color);
+            text-shadow: 0 0 20px rgba(255, 26, 26, 0.5);
+            position: relative;
+        }
+
+        h2 { 
+            font-size: 28px; 
+            border-bottom: 1px solid var(--glass-border); 
+            padding-bottom: 15px;
+            letter-spacing: 1px;
+        }
+
+        h2::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 30%;
+            right: 30%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary-color), transparent);
+        }
+
+        h3 {
+            font-size: 20px;
+        }
+
+        .form-page { display: none; }
+        .form-page.active { display: block; animation: fadeIn 0.5s ease; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-group { margin-bottom: 22px; }
+
+        label { 
+            display: block; 
+            margin-bottom: 8px; 
+            color: var(--text-secondary); 
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .form-group:focus-within label {
+            color: var(--primary-color);
+        }
+
+        input[type="text"], input[type="password"], input[type="number"], select { 
+            width: 100%; 
+            padding: 14px; 
+            background: var(--input-bg); 
+            border: 1px solid var(--glass-border); 
+            border-radius: 12px; 
+            color: var(--text-color); 
+            font-size: 16px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+        }
+
+        input:focus, select:focus { 
+            outline: none; 
+            border-color: var(--primary-color);
+            box-shadow: 0 0 20px rgba(255, 26, 26, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        input:hover, select:hover {
+            border-color: rgba(255, 26, 26, 0.5);
+        }
+
+        .flex-group { display: flex; gap: 12px; }
+
+        button { 
+            width: 100%; 
+            padding: 16px; 
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); 
+            color: #fff; 
+            border: none; 
+            border-radius: 12px; 
+            font-size: 16px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            margin-top: 8px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(255, 26, 26, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        button:hover { 
+            background: linear-gradient(135deg, #ff3333, #ff1a1a);
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 8px 30px rgba(255, 26, 26, 0.5);
+        }
+
+        button:hover::before {
+            left: 100%;
+        }
+
+        button:active {
+            transform: translateY(-1px) scale(0.98);
+        }
+
+        .btn-blue { 
+            background: linear-gradient(135deg, #ff3333, #cc0000) !important; 
+            color: #fff; 
+        }
+
+        .btn-blue:hover {
+            background: linear-gradient(135deg, #ff4d4d, #ff1a1a) !important;
+        }
+
+        .btn-danger { 
+            background: linear-gradient(135deg, #cc0000, #990000) !important; 
+            color: #fff; 
+            padding: 8px 16px; 
+            font-size: 12px; 
+            width: auto;
+        }
+
+        .btn-danger:hover {
+            background: linear-gradient(135deg, #ff1a1a, #cc0000) !important;
+        }
+
+        .btn-secondary { 
+            background: transparent; 
+            color: var(--text-secondary); 
+            border: 1px solid var(--glass-border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 26, 26, 0.1);
+            border-color: var(--primary-color);
+            color: #fff;
+        }
+
+        .badge { 
+            background: var(--glass-bg); 
+            backdrop-filter: blur(10px);
+            border: 1px dashed var(--primary-color); 
+            padding: 15px; 
+            border-radius: 12px; 
+            margin-bottom: 25px; 
+            text-align: center;
+            color: var(--primary-color);
+            font-weight: 600;
+            animation: pulseBadge 2s ease-in-out infinite;
+            box-shadow: 0 0 20px rgba(255, 26, 26, 0.1);
+        }
+
+        @keyframes pulseBadge {
+            0%, 100% { box-shadow: 0 0 20px rgba(255, 26, 26, 0.1); }
+            50% { box-shadow: 0 0 30px rgba(255, 26, 26, 0.3); }
+        }
+
+        .box-light { 
+            background: var(--glass-bg); 
+            backdrop-filter: blur(15px);
+            padding: 20px; 
+            border-radius: 16px; 
+            border: 1px solid var(--glass-border); 
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .box-light:hover {
+            border-color: rgba(255, 26, 26, 0.4);
+            box-shadow: 0 4px 20px rgba(255, 26, 26, 0.1);
+        }
+
+        .radio-box { 
+            display: flex; 
+            gap: 20px; 
+            background: var(--input-bg); 
+            padding: 14px; 
+            border-radius: 12px; 
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(10px);
+        }
+
+        .radio-box label { 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+
+        .radio-box label:hover {
+            background: rgba(255, 26, 26, 0.1);
+            border-color: var(--glass-border);
+        }
+
+        .radio-box input[type="radio"] {
+            accent-color: var(--primary-color);
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .search-container { 
+            background: var(--glass-bg); 
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border); 
+            padding: 20px; 
+            border-radius: 16px; 
+            margin-bottom: 25px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .search-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary-color), transparent);
+        }
+
+        .search-result-box { 
+            margin-top: 15px; 
+            padding: 15px; 
+            background: rgba(0, 0, 0, 0.5); 
+            border-radius: 12px; 
+            display: none; 
+            border-right: 4px solid var(--success-color);
+            backdrop-filter: blur(10px);
+            animation: slideIn 0.4s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .admin-table { 
+            width: 100%; 
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 20px;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .admin-table th, .admin-table td { 
+            border: 1px solid var(--glass-border); 
+            padding: 14px; 
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .admin-table th {
+            background: rgba(255, 26, 26, 0.15);
+            color: var(--primary-color);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 13px;
+        }
+
+        .admin-table tr {
+            transition: all 0.3s ease;
+        }
+
+        .admin-table tr:hover {
+            background: rgba(255, 26, 26, 0.05);
+        }
+
+        .admin-table td {
+            background: var(--glass-bg);
+            backdrop-filter: blur(5px);
+        }
+
+        .excel-box { 
+            margin-top: 30px; 
+            border: 2px solid var(--primary-color); 
+            border-radius: 16px; 
+            overflow: hidden; 
+            background: #fff; 
+            display: none;
+            box-shadow: 0 0 30px rgba(255, 26, 26, 0.2);
+        }
+
+        .excel-box iframe { 
+            width: 100%; 
+            height: 450px; 
+            border: none; 
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-color);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #ff3333;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+                margin-top: 30px;
+            }
+
+            h2 {
+                font-size: 22px;
+            }
+
+            .admin-gear-container {
+                top: 10px;
+                left: 10px;
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+
+            .radio-box {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="admin-gear-container" onclick="openAdminPanel()">
+    <span>⚙</span> <strong>لوحة المدير والـ Excel</strong>
+</div>
+
+<div class="container">
+    <div id="loginPage" class="form-page active">
+        <h2>تسجيل دخول الموظفين المسؤولين</h2>
+        <form id="loginForm" onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label>اسم الموظف</label>
+                <input type="text" id="staffUser" required placeholder="يوزر الموظف">
+            </div>
+            <div class="form-group">
+                <label>الباسورد</label>
+                <input type="password" id="staffPass" required placeholder="الباسورد">
+            </div>
+            <button type="submit">تسجيل الدخول</button>
+        </form>
+    </div>
+
+    <div id="dashboardPage" class="form-page">
+        <h2>لوحة العمليات الشحن [Ali Recharge Agency]</h2>
+        <div id="staffBadge" class="badge"></div>
+
+        <div class="search-container">
+            <label style="color: var(--primary-color); font-weight: bold;">🔍 فحص فوري للمديونيات والحساب:</label>
+            <div class="flex-group">
+                <input type="text" id="searchIdInput" placeholder="اكتب ID الوكيل أو المستخدم">
+                <button type="button" class="btn-blue" style="width: 100px; margin: 0;" onclick="lookupDebtById()">فحص</button>
+            </div>
+            <div id="searchResult" class="search-result-box"></div>
+        </div>
+
+        <div class="flex-group" style="margin-bottom: 20px;">
+            <button type="button" class="btn-blue" onclick="showAddClientModal('وكيل')">+ إضافة وكيل جديد</button>
+            <button type="button" class="btn-blue" onclick="showAddClientModal('مستخدم')">+ إضافة مستخدم جديد</button>
+        </div>
+
+        <form id="shippingForm" onsubmit="handleShippingSubmit(event)">
+            <div class="form-group">
+                <label>الفئة المستهدفة</label>
+                <div class="radio-box">
+                    <label><input type="radio" name="targetType" value="وكيل" checked onchange="loadClientsDropdown()"> وكيل</label>
+                    <label><input type="radio" name="targetType" value="مستخدم" onchange="loadClientsDropdown()"> مستخدم</label>
+                </div>
+            </div>
+
+            <div class="form-group" style="border: 2px dashed var(--primary-color); padding: 12px; border-radius: 12px; background: rgba(255, 26, 26, 0.05);">
+                <label style="color: var(--primary-color);">🔍 بحث سريع بالـ ID:</label>
+                <input type="text" id="idSearchInput" oninput="searchByIdDirectly()" placeholder="اكتب الـ ID هنا للبحث التلقائي">
+            </div>
+
+            <div class="form-group">
+                <label id="clientSelectLabel">اختر الاسم</label>
+                <select id="clientSelect" onchange="handleClientSelectChange()" required></select>
+            </div>
+
+            <div class="form-group">
+                <label>الـ ID (تلقائي)</label>
+                <input type="text" id="clientStaticId" readonly style="background: rgba(255, 26, 26, 0.1); color: var(--primary-color); border-color: var(--primary-color);">
+            </div>
+
+            <div class="form-group">
+                <label>الشحن موجه لـ:</label>
+                <div class="radio-box">
+                    <label><input type="radio" name="chargeDestination" value="self" checked onchange="toggleDestField()"> لنفس الـ ID</label>
+                    <label><input type="radio" name="chargeDestination" value="other" onchange="toggleDestField()"> لـ ID آخر (للغير)</label>
+                </div>
+            </div>
+
+            <div id="otherIdGroup" class="form-group" style="display: none;">
+                <label>اكتب الـ ID المراد الشحن له (للغير)</label>
+                <input type="text" id="otherTargetId" placeholder="الـ ID البديل">
+            </div>
+
+            <div class="form-group">
+                <label>مبلغ الشحن</label>
+                <input type="number" id="chargeAmount" required placeholder="0.00" min="1">
+            </div>
+
+            <button type="submit">إرسال وتوثيق سحابي</button>
+            <button type="button" class="btn-secondary" onclick="logoutStaff()">تسجيل خروج</button>
+        </form>
+    </div>
+
+    <div id="adminPanelPage" class="form-page">
+        <h2>لوحة السحاب السرية الإدارية</h2>
+        <div class="box-light" style="border: 1px solid var(--success-color);">
+            <h3>نظام التسوية والمديونيات</h3>
+            <input type="text" id="adminSearchInput" placeholder="🔍 بحث بالاسم أو ID..." onkeyup="filterAdminTable()">
+            <table class="admin-table">
+                <thead><tr><th>الاسم</th><th>ID</th><th>المديونية</th><th>إجراء</th></tr></thead>
+                <tbody id="adminClientsTableBody"></tbody>
+            </table>
+        </div>
+        <div class="box-light" style="border: 1px solid var(--primary-color);">
+            <h3 style="font-size: 15px;">🔗 إعداد ربط وجلب وتحديث Google Sheets</h3>
+            <div class="form-group"><label>1. رابط الـ Web App:</label><input type="text" id="scriptUrlInput"></div>
+            <div class="form-group"><label>2. رابط الشيت الأساسي:</label><input type="text" id="sheetUrlInput"></div>
+            <button type="button" onclick="saveAdminSettings()">حفظ وإقران السحابة بالإكسل</button>
+        </div>
+        <div id="excelBox" class="excel-box"><h3 style="color:#000; background:#f4f4f5; padding:10px; font-size:14px; text-align:right;">📊 لوحة مراقبة الحسابات:</h3><iframe id="excelIframe" src=""></iframe></div>
+        <div class="box-light" style="margin-top:20px;">
+            <h3>إضافة موظف جديد</h3>
+            <form id="addStaffForm" onsubmit="handleCreateStaff(event)">
+                <div class="form-group"><label>اسم الموظف</label><input type="text" id="newStaffUser" required></div>
+                <div class="form-group"><label>باسورد</label><input type="text" id="newStaffPass" required></div>
+                <button type="submit" style="background: linear-gradient(135deg, var(--success-color), #00994d) !important; color: #fff;">تفعيل الموظف</button>
+            </form>
+        </div>
+        <h3 style="color: var(--primary-color); font-size: 16px; margin-top:15px;">الموظفون الحاليون:</h3>
+        <table class="admin-table"><thead><tr><th>الموظف</th><th>الباسورد</th><th>إجراء</th></tr></thead><tbody id="staffTableBody"></tbody></table>
+        <button type="button" class="btn-secondary" onclick="backToLoginOrDash()" style="margin-top: 25px;">رجوع</button>
+    </div>
+
+    <div id="addClientPage" class="form-page">
+        <h3 id="addClientTitle">إضافة في قاعدة البيانات</h3>
+        <div class="box-light">
+            <form id="addClientForm" onsubmit="handleSaveClient(event)">
+                <div class="form-group"><label>الاسم الكامل</label><input type="text" id="newClientName" required></div>
+                <div class="form-group"><label>الـ ID الثابت</label><input type="text" id="newClientId" required></div>
+                <button type="submit" style="background: linear-gradient(135deg, var(--success-color), #00994d) !important; color: #fff;">اعتماد العميل</button>
+                <button type="button" class="btn-secondary" onclick="backToDashboard()">إلغاء</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyANZD3x4Qeoj7AbL3MwFrktrrUgEVE2k58",
+        authDomain: "aliag-a84ac.firebaseapp.com",
+        projectId: "aliag-a84ac",
+        storageBucket: "aliag-a84ac.firebasestorage.app",
+        messagingSenderId: "893423777176",
+        appId: "1:893423777176:web:7e82f605ff48d4c20f67ed",
+        measurementId: "G-HT5BTX2RTR"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    db.ref('clients').on('value', snapshot => {
+        let tbody = document.getElementById('adminClientsTableBody');
+        if(!tbody) return;
+        tbody.innerHTML = "";
+        snapshot.forEach(child => {
+            let cl = child.val();
+            tbody.innerHTML += `<tr><td>${cl.name}</td><td>${cl.id}</td><td>${cl.debt || 0}$</td>
+            <td>
+                <button class="btn-danger" style="padding:5px; background:var(--accent-blue);" onclick="settleDebt('${child.key}', '${cl.name}')">تصفير</button>
+                <button class="btn-danger" style="padding:5px;" onclick="deleteClient('${child.key}', '${cl.name}')">حذف</button>
+            </td></tr>`;
+        });
+    });
+
+    function settleDebt(key, name) {
+        if(confirm("تصفير مديونية " + name + "؟")) {
+            db.ref('clients/' + key).update({debt: 0, totalOrders: 0});
+            alert("تم التصفير!");
+        }
+    }
+
+    function deleteClient(key, name) {
+        if(confirm("هل أنت متأكد من حذف العميل: " + name + " نهائياً؟")) {
+            db.ref('clients/' + key).remove();
+            alert("تم حذف العميل!");
+        }
+    }
+
+    let staffAccounts = []; let clientsDatabase = [];
+    let currentLoggedStaff = null; let currentAddingType = "وكيل";
+    let globalScriptUrl = ""; let globalSheetUrl = "";
+
+    function searchByIdDirectly() {
+        const id = document.getElementById('idSearchInput').value.trim();
+        const typeSelected = document.querySelector('input[name="targetType"]:checked').value;
+        const found = clientsDatabase.find(c => c.id === id && c.type === typeSelected);
+        if (found) {
+            document.getElementById('clientSelect').value = found.name;
+            document.getElementById('clientStaticId').value = found.id;
+        }
+    }
+
+    function filterAdminTable() {
+        let val = document.getElementById("adminSearchInput").value.toLowerCase();
+        let rows = document.querySelectorAll("#adminClientsTableBody tr");
+        rows.forEach(tr => {
+            tr.style.display = tr.textContent.toLowerCase().includes(val) ? "" : "none";
+        });
+    }
+
+    db.ref('settings').on('value', (snapshot) => {
+        const val = snapshot.val() || {};
+        globalScriptUrl = val.scriptUrl || "";
+        globalSheetUrl = val.sheetUrl || "";
+        document.getElementById('scriptUrlInput').value = globalScriptUrl;
+        document.getElementById('sheetUrlInput').value = globalSheetUrl;
+        const iframe = document.getElementById('excelIframe');
+        const box = document.getElementById('excelBox');
+        if(globalSheetUrl) {
+            iframe.src = globalSheetUrl.includes("/edit") ? globalSheetUrl.split("/edit")[0] + "/edit?usp=sharing" : globalSheetUrl;
+            box.style.display = "block";
+        } else { box.style.display = "none"; }
+    });
+
+    db.ref('staff').on('value', (snapshot) => {
+        staffAccounts = []; snapshot.forEach((child) => { staffAccounts.push(child.val()); });
+        renderStaffTable();
+        if(staffAccounts.length === 0) db.ref('staff/كريم').set({ username: "كريم", password: "123" });
+    });
+
+    db.ref('clients').on('value', (snapshot) => {
+        clientsDatabase = []; snapshot.forEach((child) => { clientsDatabase.push(child.val()); });
+        if(currentLoggedStaff) loadClientsDropdown();
+    });
+
+    function saveAdminSettings() {
+        const scriptUrl = document.getElementById('scriptUrlInput').value.trim();
+        const sheetUrl = document.getElementById('sheetUrlInput').value.trim();
+        db.ref('settings').set({ scriptUrl, sheetUrl })
+        .then(() => alert("تم ربط الإكسل وتحديث المنظومة سحابياً!"))
+        .catch(() => alert("خطأ في الحفظ"));
+    }
+
+    function sendToGoogleSheet(actionType, payload) {
+        if(!globalScriptUrl) return;
+        const formData = new URLSearchParams();
+        formData.append("action", actionType);
+        formData.append("data", JSON.stringify(payload));
+        fetch(globalScriptUrl, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: formData.toString() });
+    }
+
+    function openAdminPanel() {
+        if (prompt("الباسورد السري للمدير:") === "1987") {
+            document.querySelectorAll('.form-page').forEach(p => p.classList.remove('active'));
+            document.getElementById('adminPanelPage').classList.add('active');
+        } else { alert("مرفوض!"); }
+    }
+
+    function renderStaffTable() {
+        const tbody = document.getElementById('staffTableBody'); tbody.innerHTML = "";
+        staffAccounts.forEach((st) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td><strong>${st.username}</strong></td><td>${st.password}</td>
+            <td><button class="btn-danger" onclick="deleteStaff('${st.username}')">حذف</button></td>`;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function handleCreateStaff(event) {
+        event.preventDefault();
+        const username = document.getElementById('newStaffUser').value.trim();
+        const password = document.getElementById('newStaffPass').value.trim();
+        db.ref('staff/' + username).set({ username, password });
+        document.getElementById('addStaffForm').reset();
+    }
+
+    function deleteStaff(username) { if(confirm("حذف الموظف؟")) db.ref('staff/' + username).remove(); }
+
+    function handleLogin(event) {
+        event.preventDefault();
+        const user = document.getElementById('staffUser').value.trim();
+        const pass = document.getElementById('staffPass').value.trim();
+        const match = staffAccounts.find(s => s.username === user && s.password === pass);
+        if (match) {
+            currentLoggedStaff = match.username;
+            document.getElementById('loginPage').classList.remove('active');
+            document.getElementById('dashboardPage').classList.add('active');
+            document.getElementById('staffBadge').innerHTML = `الموظف المسؤول: <strong>${currentLoggedStaff}</strong>`;
+            loadClientsDropdown();
+        } else { alert("بيانات خاطئة!"); }
+    }
+
+    function loadClientsDropdown() {
+        const typeSelected = document.querySelector('input[name="targetType"]:checked').value;
+        const dropdown = document.getElementById('clientSelect');
+        dropdown.innerHTML = '<option value="">-- اختر الاسم --</option>';
+        clientsDatabase.filter(c => c.type === typeSelected).forEach(c => {
+            const opt = document.createElement('option'); opt.value = c.name; opt.innerText = c.name; dropdown.appendChild(opt);
+        });
+        document.getElementById('clientStaticId').value = ""; 
+    }
+
+    function handleClientSelectChange() {
+        const selectedName = document.getElementById('clientSelect').value;
+        const typeSelected = document.querySelector('input[name="targetType"]:checked').value;
+        const found = clientsDatabase.find(c => c.name === selectedName && c.type === typeSelected);
+        document.getElementById('clientStaticId').value = found ? found.id : "";
+    }
+
+    function lookupDebtById() {
+        const searchId = document.getElementById('searchIdInput').value.trim();
+        const resultBox = document.getElementById('searchResult'); if(!searchId) return;
+        const found = clientsDatabase.find(c => c.id === searchId);
+        resultBox.style.display = 'block';
+        if(found) {
+            resultBox.innerHTML = `📌 <strong>الاسم:</strong> ${found.name}<br>💰 <strong>المديونية:</strong> ${found.debt || 0} $<br>📊 <strong>الشحنات:</strong> ${found.totalOrders || 0}`;
+        } else { resultBox.innerHTML = `❌ الـ ID غير مسجل!`; }
+    }
+
+    function showAddClientModal(type) {
+        currentAddingType = type;
+        document.getElementById('addClientTitle').innerText = `إضافة [${type}] جديد للمنظومة`;
+        document.getElementById('dashboardPage').classList.remove('active');
+        document.getElementById('addClientPage').classList.add('active');
+    }
+
+    function backToDashboard() {
+        document.getElementById('addClientPage').classList.remove('active');
+        document.getElementById('dashboardPage').classList.add('active');
+    }
+
+    function handleSaveClient(event) {
+        event.preventDefault();
+        const name = document.getElementById('newClientName').value.trim();
+        const id = document.getElementById('newClientId').value.trim();
+        
+        const isExists = clientsDatabase.some(c => c.id === id);
+        if (isExists) {
+            alert("خطأ: هذا الـ ID مسجل بالفعل في المنظومة، لا يمكن تكرار نفس الـ ID!");
+            return;
+        }
+
+        const clientPayload = { type: currentAddingType, name: name, id: id, debt: 0, totalOrders: 0 };
+        db.ref('clients/' + id).set(clientPayload);
+        sendToGoogleSheet("createTab", clientPayload);
+        alert(`تم الحفظ وإصدار أمر إنشاء ورقة عمل بالإكسل باسم: ${name}`);
+        document.getElementById('addClientForm').reset();
+        backToDashboard();
+    }
+
+    function handleShippingSubmit(event) {
+        event.preventDefault();
+        const clientName = document.getElementById('clientSelect').value;
+        const staticId = document.getElementById('clientStaticId').value;
+        const chargeDestination = document.querySelector('input[name="chargeDestination"]:checked').value;
+        const amount = parseFloat(document.getElementById('chargeAmount').value);
+        let finalChargedId = staticId;
+        if (chargeDestination === 'other') finalChargedId = document.getElementById('otherTargetId').value.trim();
+        const now = new Date();
+        const formattedTime = now.toLocaleDateString('ar-EG') + ' ' + now.toLocaleTimeString('ar-EG');
+        const clientRef = db.ref('clients/' + staticId);
+        clientRef.once('value').then((snapshot) => {
+            const data = snapshot.val();
+            const newDebt = (data.debt || 0) + amount;
+            const newOrders = (data.totalOrders || 0) + 1;
+            clientRef.update({ debt: newDebt, totalOrders: newOrders });
+            const report = { staff: currentLoggedStaff, clientName: clientName, clientId: staticId, destination: chargeDestination === 'self' ? 'لنفسه' : 'للغير', chargedId: finalChargedId, amount: amount, time: formattedTime };
+            db.ref('shipping_logs').push().set(report);
+            sendToGoogleSheet("appendRow", report);
+            alert(`تم الشحن وتوثيق الحركة في ملف إكسل العميل المخصص!`);
+            document.getElementById('chargeAmount').value = "";
+        });
+    }
+
+    function toggleDestField() {
+        const dest = document.querySelector('input[name="chargeDestination"]:checked').value;
+        document.getElementById('otherIdGroup').style.display = dest === 'other' ? 'block' : 'none';
+    }
+    function backToLoginOrDash() {
+        document.getElementById('adminPanelPage').classList.remove('active');
+        document.getElementById(currentLoggedStaff ? 'dashboardPage' : 'loginPage').classList.add('active');
+    }
+    function logoutStaff() { currentLoggedStaff = null; document.getElementById('dashboardPage').classList.remove('active'); document.getElementById('loginPage').classList.add('active'); }
+</script>
+</body>
+</html>
