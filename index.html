@@ -646,11 +646,127 @@
                 min-width: 100%;
             }
         }
+    
+        /* ======= NEW: Delete Log Button Styles ======= */
+        .delete-log-btn {
+            background: linear-gradient(135deg, #ff4444, #cc0000) !important;
+            color: #fff;
+            padding: 4px 10px;
+            font-size: 11px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            width: auto;
+            margin: 0;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(255, 68, 68, 0.3);
+        }
+
+        .delete-log-btn:hover {
+            background: linear-gradient(135deg, #ff6666, #ff3333) !important;
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(255, 68, 68, 0.5);
+        }
+
+        .delete-log-btn:disabled {
+            background: #555 !important;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .delete-confirm-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 9999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .delete-confirm-box {
+            background: var(--card-bg);
+            border: 2px solid var(--primary-color);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 0 40px rgba(255, 26, 26, 0.3);
+            animation: popIn 0.3s ease;
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .delete-confirm-box h3 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .delete-confirm-box p {
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .delete-confirm-box .confirm-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .delete-confirm-box button {
+            flex: 1;
+            margin: 0;
+            padding: 12px;
+            font-size: 14px;
+        }
+
+        .btn-cancel {
+            background: transparent !important;
+            border: 1px solid var(--glass-border) !important;
+            color: var(--text-secondary) !important;
+        }
+
+        .btn-cancel:hover {
+            background: rgba(255, 255, 255, 0.1) !important;
+            color: #fff !important;
+        }
+
+        .btn-confirm-delete {
+            background: linear-gradient(135deg, #ff4444, #cc0000) !important;
+        }
+
+        .btn-confirm-delete:hover {
+            background: linear-gradient(135deg, #ff6666, #ff3333) !important;
+        }
+
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
+<!-- Delete Confirmation Modal -->
+<div id="deleteConfirmOverlay" class="delete-confirm-overlay">
+    <div class="delete-confirm-box">
+        <h3>⚠️ تأكيد حذف الشحنة</h3>
+        <p id="deleteConfirmText">هل أنت متأكد من حذف هذه الشحنة؟<br>سيتم خصم المبلغ من المديونية وإرجاع عدد الشحنات.</p>
+        <div class="confirm-buttons">
+            <button class="btn-cancel" onclick="cancelDelete()">إلغاء</button>
+            <button class="btn-confirm-delete" onclick="confirmDelete()">نعم، احذف</button>
+        </div>
+    </div>
+</div>
+
+
 
 <div class="admin-gear-container" onclick="openAdminPanel()">
     <span>⚙</span> <strong>لوحة المدير والـ Excel</strong>
@@ -998,8 +1114,12 @@
 
         db.ref('shipping_logs').once('value').then(snapshot => {
             let logs = [];
+            let childSnapshots = [];
             snapshot.forEach(child => {
-                logs.push(child.val());
+                let log = child.val();
+                log._key = child.key;
+                logs.push(log);
+                childSnapshots.push({key: child.key, val: child.val()});
             });
             
             let clientLogs = logs.filter(l => l.clientId === searchId);
@@ -1048,16 +1168,23 @@
                 html += '<h4 style="margin-top:15px;">📝 تفاصيل الشحنات:</h4>';
                 html += '<div style="max-height:250px; overflow-y:auto;">';
                 html += '<table class="log-table" id="logsTable">';
-                html += '<thead><tr><th>#</th><th>التاريخ</th><th>المبلغ</th><th>الوجهة</th><th>الموظف</th></tr></thead>';
+                html += '<thead><tr><th>#</th><th>التاريخ</th><th>المبلغ</th><th>الوجهة</th><th>الموظف</th><th>إجراء</th></tr></thead>';
                 html += '<tbody>';
                 
                 filteredLogs.forEach((log, index) => {
+                    const logKey = childSnapshots[index] ? childSnapshots[index].key : '';
+                    const amount = parseFloat(log.amount) || 0;
                     html += '<tr>';
                     html += '<td>' + (index + 1) + '</td>';
                     html += '<td>' + log.time + '</td>';
                     html += '<td style="color:var(--primary-color); font-weight:bold;">' + log.amount + ' $</td>';
                     html += '<td>' + (log.destination === 'لنفسه' ? 'لنفسه' : (log.chargedId || 'للغير')) + '</td>';
                     html += '<td>' + log.staff + '</td>';
+                    html += '<td>';
+                    if (logKey) {
+                        html += '<button class="delete-log-btn" onclick="openDeleteConfirm(' + "'" + logKey + "'" + ', ' + amount + ', ' + "'" + searchId + "'" + ')" title="حذف الشحنة">🗑️ حذف</button>';
+                    }
+                    html += '</td>';
                     html += '</tr>';
                 });
                 
@@ -1367,6 +1494,84 @@
         document.getElementById('dashboardPage').classList.remove('active');
         document.getElementById('loginPage').classList.add('active');
     }
+
+    // ======= NEW: Delete Shipment System =======
+    let pendingDeleteLogKey = null;
+    let pendingDeleteLogAmount = 0;
+    let pendingDeleteLogClientId = null;
+
+    function openDeleteConfirm(logKey, amount, clientId) {
+        pendingDeleteLogKey = logKey;
+        pendingDeleteLogAmount = parseFloat(amount);
+        pendingDeleteLogClientId = clientId;
+
+        const overlay = document.getElementById('deleteConfirmOverlay');
+        const text = document.getElementById('deleteConfirmText');
+        text.innerHTML = 'هل أنت متأكد من حذف هذه الشحنة؟<br><br>' +
+            '<strong style="color:#ff4444;">المبلغ:</strong> ' + amount + ' $<br>' +
+            '<strong style="color:#ff4444;">العميل ID:</strong> ' + clientId + '<br><br>' +
+            'سيتم:<br>• خصم المبلغ من المديونية<br>• إنقاص عدد الشحنات بـ 1<br>• حذف السجل نهائياً';
+        overlay.style.display = 'flex';
+    }
+
+    function cancelDelete() {
+        pendingDeleteLogKey = null;
+        pendingDeleteLogAmount = 0;
+        pendingDeleteLogClientId = null;
+        document.getElementById('deleteConfirmOverlay').style.display = 'none';
+    }
+
+    function confirmDelete() {
+        if (!pendingDeleteLogKey || !pendingDeleteLogClientId) {
+            cancelDelete();
+            return;
+        }
+
+        const logRef = db.ref('shipping_logs/' + pendingDeleteLogKey);
+        const clientRef = db.ref('clients/' + pendingDeleteLogClientId);
+
+        clientRef.once('value').then((snapshot) => {
+            const clientData = snapshot.val();
+            if (!clientData) {
+                alert("خطأ: العميل غير موجود!");
+                cancelDelete();
+                return;
+            }
+
+            const currentDebt = parseFloat(clientData.debt) || 0;
+            const currentOrders = parseInt(clientData.totalOrders) || 0;
+            const newDebt = Math.max(0, currentDebt - pendingDeleteLogAmount);
+            const newOrders = Math.max(0, currentOrders - 1);
+
+            return clientRef.update({
+                debt: newDebt,
+                totalOrders: newOrders
+            });
+        }).then(() => {
+            return logRef.remove();
+        }).then(() => {
+            alert('✅ تم حذف الشحنة بنجاح!\n\n• خصم ' + pendingDeleteLogAmount + '$ من المديونية\n• عدد الشحنات: -1');
+            cancelDelete();
+            lookupDebtById();
+        }).catch((error) => {
+            console.error("Delete error:", error);
+            alert("❌ حدث خطأ أثناء الحذف: " + error.message);
+            cancelDelete();
+        });
+    }
+
+    // Close modal when clicking outside
+    document.addEventListener('DOMContentLoaded', function() {
+        const overlay = document.getElementById('deleteConfirmOverlay');
+        if (overlay) {
+            overlay.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    cancelDelete();
+                }
+            });
+        }
+    });
+
 </script>
 </body>
 </html>
